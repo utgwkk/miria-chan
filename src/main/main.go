@@ -13,7 +13,10 @@ func main () {
     if err != nil {
         panic(err)
     }
-    err = api.ChatPostMessage(channel.Id, "hello", nil)
+    options := &slack.ChatPostMessageOpt{
+        Username: "赤城みりあ",
+        IconUrl: "https://gyazo.com/04a9d82be786486aa2c44463e9e5b60d.png"}
+    err = api.ChatPostMessage(channel.Id, "みりあもやるー！", options)
     if err != nil {
         panic(err)
     }
