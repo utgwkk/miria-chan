@@ -159,7 +159,10 @@ func (m *MiriaClient) PostYourFavoritedTweetWithMediaAndSaveImages(event *twitte
 
 		// Save image to S3 bucket
 		log.Print("put to S3")
-		m.AWS.Put(destinationPath)
+		err = m.AWS.Put(destinationPath)
+		if err != nil {
+			log.Print(err)
+		}
 
 		// Delete temporary image
 		log.Print("delete temporary file")
