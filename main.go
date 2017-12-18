@@ -24,5 +24,5 @@ func main() {
 		os.Getenv("AWS_BUCKET"),
 		os.Getenv("AWS_BUCKET_BASEPATH"),
 	)
-	miria.CollectEvents(miria.JustPostYourFavoritedTweetToSlack)
+	miria.CollectEvents(miria.JustPostYourFavoritedTweetWithMediaWhenNotSavedYet)
 }

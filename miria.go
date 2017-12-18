@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ type MiriaClient struct {
 	TwitterUserID string
 	SlackClient   (*SlackWebhookClient)
 	AWS           (*AWSCredential)
+	DB            (*sql.DB)
 }
 
 func NewMiriaClient() *MiriaClient {
@@ -36,6 +38,14 @@ func (m *MiriaClient) InitializeSlackClient(webhookURL string) {
 
 func (m *MiriaClient) InitializeAWSCredential(accessKeyID, secretAccessKey, region, bucketName, basePath string) {
 	m.AWS = NewAWSCredential(accessKeyID, secretAccessKey, region, bucketName, basePath)
+}
+
+func (m *MiriaClient) InitializeDBConnection(hostname, databaseName, username, password string) {
+	db, err := NewMySQLConnection(hostname, databaseName, username, password)
+	if err != nil {
+		log.Fatal(err)
+	}
+	m.DB = db
 }
 
 func (m *MiriaClient) CollectEvents(processEvent func(*twitter.Event)) {
@@ -69,4 +79,41 @@ func (m *MiriaClient) JustPostYourFavoritedTweetToSlack(event *twitter.Event) {
 			log.Fatal(err)
 		}
 	}
+}
+
+func (m *MiriaClient) JustPostYourFavoritedTweetWithMediaWhenNotSavedYet(event *twitter.Event) {
+	// If you favorited a tweet and not saved the images yet
+	if m.shouldBeSaved(event) {
+		tweetID := event.TargetObject.IDStr
+		tweetUser := event.TargetObject.User.ScreenName
+		tweetURL := TweetURL(tweetID, tweetUser)
+		log.Printf("You favorited %s.", tweetURL)
+		err := m.SlackClient.postMessage(tweetURL)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func (m *MiriaClient) shouldBeSaved(event *twitter.Event) bool {
+	tweetID := event.TargetObject.IDStr
+	tweetUser := event.TargetObject.User.ScreenName
+	tweetURL := TweetURL(tweetID, tweetUser)
+	hasMedia := len(event.TargetObject.ExtendedEntities.Media) > 0
+	return event.Event == "favorite" && event.Source.IDStr == m.TwitterUserID && hasMedia && !m.existSource(tweetURL)
+}
+
+func (m *MiriaClient) existSource(source string) bool {
+	rows, err := m.DB.Query("select count(*) from image_info where source = ?")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	var count int64
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			log.Fatal(err)
+		}
+	}
+	return count > 0
 }
