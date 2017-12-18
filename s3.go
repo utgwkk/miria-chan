@@ -4,7 +4,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/service/s3"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -36,16 +35,13 @@ func (cred *AWSCredential) Put(filepath string) error {
 	}
 	destinationPath := path.Join(cred.BasePath, path.Base(filepath))
 	defer file.Close()
-	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(cred.Region),
-		Credentials: credentials.NewSharedCredentials("", "test-account"),
-	})
+	sess, err := session.NewSession()
 	if err != nil {
 		return err
 	}
 	s3session := s3.New(sess)
 	_, err = s3session.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(cred.Region),
+		Bucket: aws.String(cred.BucketName),
 		Key:    aws.String(destinationPath),
 		Body:   file,
 	})
