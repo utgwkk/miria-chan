@@ -16,6 +16,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/go-sql-driver/mysql"
 	"github.com/nfnt/resize"
 
 	"github.com/dghubble/go-twitter/twitter"
@@ -27,6 +28,7 @@ type MiriaClient struct {
 	SlackClient      (*SlackWebhookClient)
 	AWS              (*AWSCredential)
 	DB               (*sql.DB)
+	DSN              string
 	ThumbnailDirPath string
 }
 
@@ -57,10 +59,18 @@ func (m *MiriaClient) InitializeAWSCredential(accessKeyID, secretAccessKey, regi
 }
 
 func (m *MiriaClient) InitializeDBConnection(hostname, databaseName, username, password string) {
-	db, err := NewMySQLConnection(hostname, databaseName, username, password)
+	config := &mysql.Config{
+		User:   username,
+		Passwd: password,
+		DBName: databaseName,
+		Addr:   hostname,
+	}
+	dsn := config.FormatDSN()
+	db, err := NewMySQLConnection(dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
+	m.DSN = dsn
 	m.DB = db
 }
 
@@ -219,7 +229,7 @@ func (m *MiriaClient) generateThumbnail(filePath string) error {
 }
 
 func (m *MiriaClient) saveInfoToDB(tweet *twitter.Tweet, filename string) {
-	res, err := m.DB.Exec("insert into images (filename) values (?)", filename)
+	res, err := m.Sql().Exec("insert into images (filename) values (?)", filename)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -231,7 +241,7 @@ func (m *MiriaClient) saveInfoToDB(tweet *twitter.Tweet, filename string) {
 	tweetUser := tweet.User.ScreenName
 	tweetURL := TweetURL(tweetID, tweetUser)
 	comment := tweet.FullText
-	_, err = m.DB.Exec(
+	_, err = m.Sql().Exec(
 		"insert into image_info (image_id, comment, source) values (?, ?, ?)",
 		lastID, comment, tweetURL,
 	)
@@ -269,7 +279,7 @@ func (m *MiriaClient) shouldBeSaved(event *twitter.Event) bool {
 }
 
 func (m *MiriaClient) existSource(source string) bool {
-	rows, err := m.DB.Query("select count(*) from image_info where source = ?", source)
+	rows, err := m.Sql().Query("select count(*) from image_info where source = ?", source)
 	if err != nil {
 		log.Fatal(err)
 	}

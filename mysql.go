@@ -2,18 +2,20 @@ package main
 
 import (
 	"database/sql"
-
-	"github.com/go-sql-driver/mysql"
 )
 
-func NewMySQLConnection(hostname, databaseName, username, password string) (*sql.DB, error) {
-	config := &mysql.Config{
-		User:   username,
-		Passwd: password,
-		DBName: databaseName,
-		Addr:   hostname,
-	}
-	dsn := config.FormatDSN()
+func NewMySQLConnection(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("mysql", dsn)
 	return db, err
+}
+
+func (m *MiriaClient) Sql() *sql.DB {
+	if err := m.DB.Ping(); err != nil {
+		db, err := NewMySQLConnection(m.DSN)
+		if err != nil {
+			panic(err)
+		}
+		m.DB = db
+	}
+	return m.DB
 }
