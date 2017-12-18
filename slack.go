@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 )
 
 type SlackPayload struct {
@@ -14,7 +13,15 @@ type SlackPayload struct {
 	Username string `json:"username"`
 }
 
-func postMessage(text string) error {
+type SlackWebhookClient struct {
+	WebhookURL string
+}
+
+func NewSlackWebhookClient(webhookURL string) *SlackWebhookClient {
+	return &SlackWebhookClient{webhookURL}
+}
+
+func (client *SlackWebhookClient) postMessage(text string) error {
 	payload, err := json.Marshal(SlackPayload{
 		text,
 		"gopher",
@@ -23,10 +30,8 @@ func postMessage(text string) error {
 		return err
 	}
 
-	webhookURL := os.Getenv("SLACK_WEBHOOK_URL")
-
 	resp, err := http.PostForm(
-		webhookURL,
+		client.WebhookURL,
 		url.Values{"payload": {string(payload)}},
 	)
 	if err != nil {
