@@ -1,16 +1,11 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
-	}
-
-	err = postMessage("Hello from Golang")
+	err := postMessage("Hello from Golang")
 	if err != nil {
 		panic(err)
 	}
