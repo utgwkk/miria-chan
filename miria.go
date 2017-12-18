@@ -2,9 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 
 	"github.com/dghubble/go-twitter/twitter"
@@ -97,6 +100,83 @@ func (m *MiriaClient) JustPostYourFavoritedTweetWithMediaWhenNotSavedYet(event *
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (m *MiriaClient) PostYourFavoritedTweetWithMediaAndSaveImages(event *twitter.Event) {
+	if event.Event != "favorite" {
+		return
+	}
+	tweetID := event.TargetObject.IDStr
+	tweetUser := event.TargetObject.User.ScreenName
+	tweetURL := TweetURL(tweetID, tweetUser)
+	log.Printf("You favorited %s.", tweetURL)
+	if !m.shouldBeSaved(event) {
+		return
+	}
+	err := m.SlackClient.postMessage(tweetURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tempDir, err := ioutil.TempDir("", "miria")
+	if err != nil {
+		log.Fatal(err)
+	}
+	medias := event.TargetObject.ExtendedEntities.Media
+	for _, media := range medias {
+		// Save image to temporary directory
+		downloadURL := media.MediaURLHttps
+		filename := path.Base(downloadURL)
+		destinationPath := path.Join(tempDir, filename)
+		err := download(media.MediaURLHttps, destinationPath)
+		if err != nil {
+			log.Print(err)
+		}
+		// TODO: Save information to DB
+		// TODO: Generate a thumbnail
+		// TODO: Save image to S3 bucket
+	}
+}
+
+func (m *MiriaClient) saveInfoToDB(tweet *twitter.Tweet, filename string) {
+	res, err := m.DB.Exec("insert into images (filename) values (?)", filename)
+	if err != nil {
+		log.Fatal(err)
+	}
+	lastID, err := res.LastInsertId()
+	if err != nil {
+		log.Fatal(err)
+	}
+	tweetID := tweet.IDStr
+	tweetUser := tweet.User.ScreenName
+	tweetURL := TweetURL(tweetID, tweetUser)
+	comment := tweet.FullText
+	_, err = m.DB.Exec(
+		"insert into image_info (image_id, comment, source) values (?, ?, ?)",
+		lastID, comment, tweetURL,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func download(url, destination string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	file, err := os.OpenFile(destination, os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	file.Write(body)
+	return nil
 }
 
 func (m *MiriaClient) shouldBeSaved(event *twitter.Event) bool {

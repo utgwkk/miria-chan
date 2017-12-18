@@ -30,5 +30,5 @@ func main() {
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASS"),
 	)
-	miria.CollectEvents(miria.JustPostYourFavoritedTweetWithMediaWhenNotSavedYet)
+	miria.CollectEvents(miria.PostYourFavoritedTweetWithMediaAndSaveImages)
 }
