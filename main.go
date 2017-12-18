@@ -17,5 +17,12 @@ func main() {
 		os.Getenv("TWITTER_ACCESS_TOKEN_KEY"),
 		os.Getenv("TWITTER_ACCESS_TOKEN_SECRET"),
 	)
+	miria.InitializeAWSCredential(
+		os.Getenv("AWS_ACCESS_KEY_ID"),
+		os.Getenv("AWS_SECRET_ACCESS_KEY"),
+		os.Getenv("AWS_REGION"),
+		os.Getenv("AWS_BUCKET"),
+		os.Getenv("AWS_BUCKET_BASEPATH"),
+	)
 	miria.CollectEvents(miria.JustPostYourFavoritedTweetToSlack)
 }

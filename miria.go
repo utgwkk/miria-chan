@@ -13,6 +13,7 @@ type MiriaClient struct {
 	TwitterClient (*twitter.Client)
 	TwitterUserID string
 	SlackClient   (*SlackWebhookClient)
+	AWS           (*AWSCredential)
 }
 
 func NewMiriaClient() *MiriaClient {
@@ -31,6 +32,10 @@ func (m *MiriaClient) InitializeTwitterClient(consumerKey, consumerSecret, acces
 
 func (m *MiriaClient) InitializeSlackClient(webhookURL string) {
 	m.SlackClient = NewSlackWebhookClient(webhookURL)
+}
+
+func (m *MiriaClient) InitializeAWSCredential(accessKeyID, secretAccessKey, region, bucketName, basePath string) {
+	m.AWS = NewAWSCredential(accessKeyID, secretAccessKey, region, bucketName, basePath)
 }
 
 func (m *MiriaClient) CollectEvents(processEvent func(*twitter.Event)) {
