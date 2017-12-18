@@ -82,6 +82,9 @@ func (m *MiriaClient) JustPostYourFavoritedTweetToSlack(event *twitter.Event) {
 }
 
 func (m *MiriaClient) JustPostYourFavoritedTweetWithMediaWhenNotSavedYet(event *twitter.Event) {
+	if event.Event != "favorite" {
+		return
+	}
 	// If you favorited a tweet and not saved the images yet
 	tweetID := event.TargetObject.IDStr
 	tweetUser := event.TargetObject.User.ScreenName
@@ -100,7 +103,7 @@ func (m *MiriaClient) shouldBeSaved(event *twitter.Event) bool {
 	tweetUser := event.TargetObject.User.ScreenName
 	tweetURL := TweetURL(tweetID, tweetUser)
 	hasMedia := len(event.TargetObject.ExtendedEntities.Media) > 0
-	return event.Event == "favorite" && event.Source.IDStr == m.TwitterUserID && hasMedia && !m.existSource(tweetURL)
+	return event.Source.IDStr == m.TwitterUserID && hasMedia && !m.existSource(tweetURL)
 }
 
 func (m *MiriaClient) existSource(source string) bool {
