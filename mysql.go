@@ -8,11 +8,10 @@ import (
 
 func NewMySQLConnection(hostname, databaseName, username, password string) (*sql.DB, error) {
 	config := &mysql.Config{
-		User:      username,
-		Passwd:    password,
-		DBName:    databaseName,
-		Addr:      hostname,
-		Collation: "utf8mb4",
+		User:   username,
+		Passwd: password,
+		DBName: databaseName,
+		Addr:   hostname,
 	}
 	dsn := config.FormatDSN()
 	return sql.Open("mysql", dsn)
