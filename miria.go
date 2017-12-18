@@ -107,7 +107,7 @@ func (m *MiriaClient) shouldBeSaved(event *twitter.Event) bool {
 }
 
 func (m *MiriaClient) existSource(source string) bool {
-	rows, err := m.DB.Query("select count(*) from image_info where source = ?")
+	rows, err := m.DB.Query("select count(*) from image_info where source = ?", source)
 	if err != nil {
 		log.Fatal(err)
 	}
