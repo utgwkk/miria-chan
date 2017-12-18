@@ -274,7 +274,7 @@ func (m *MiriaClient) shouldBeSaved(event *twitter.Event) bool {
 	tweetID := event.TargetObject.IDStr
 	tweetUser := event.TargetObject.User.ScreenName
 	tweetURL := TweetURL(tweetID, tweetUser)
-	hasMedia := len(event.TargetObject.ExtendedEntities.Media) > 0
+	hasMedia := event.TargetObject.ExtendedEntities != nil && event.TargetObject.ExtendedEntities.Media != nil && len(event.TargetObject.ExtendedEntities.Media) > 0
 	return event.Source.IDStr == m.TwitterUserID && hasMedia && !m.existSource(tweetURL)
 }
 
