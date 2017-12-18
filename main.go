@@ -32,4 +32,5 @@ func main() {
 		os.Getenv("DB_PASS"),
 	)
 	miria.CollectEvents(miria.PostYourFavoritedTweetWithMediaAndSaveImages)
+	miria.DB.Close()
 }

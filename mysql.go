@@ -15,6 +15,5 @@ func NewMySQLConnection(hostname, databaseName, username, password string) (*sql
 	}
 	dsn := config.FormatDSN()
 	db, err := sql.Open("mysql", dsn)
-	defer db.Close()
 	return db, err
 }
