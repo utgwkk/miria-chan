@@ -2,27 +2,40 @@ package main
 
 import (
 	"database/sql"
+	"image"
+	"image/gif"
+	"image/jpeg"
+	"image/png"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"path"
+	"strings"
 	"syscall"
+
+	"github.com/nfnt/resize"
 
 	"github.com/dghubble/go-twitter/twitter"
 )
 
 type MiriaClient struct {
-	TwitterClient (*twitter.Client)
-	TwitterUserID string
-	SlackClient   (*SlackWebhookClient)
-	AWS           (*AWSCredential)
-	DB            (*sql.DB)
+	TwitterClient    (*twitter.Client)
+	TwitterUserID    string
+	SlackClient      (*SlackWebhookClient)
+	AWS              (*AWSCredential)
+	DB               (*sql.DB)
+	ThumbnailDirPath string
 }
 
 func NewMiriaClient() *MiriaClient {
 	return &MiriaClient{}
+}
+
+func (m *MiriaClient) RegisterThumbnailPath(dirPath string) {
+	m.ThumbnailDirPath = dirPath
 }
 
 func (m *MiriaClient) InitializeTwitterClient(consumerKey, consumerSecret, accessToken, accessTokenSecret string) {
@@ -127,14 +140,74 @@ func (m *MiriaClient) PostYourFavoritedTweetWithMediaAndSaveImages(event *twitte
 		downloadURL := media.MediaURLHttps
 		filename := path.Base(downloadURL)
 		destinationPath := path.Join(tempDir, filename)
+		log.Printf("download %s", downloadURL)
 		err := download(media.MediaURLHttps, destinationPath)
 		if err != nil {
 			log.Print(err)
 		}
-		// TODO: Save information to DB
-		// TODO: Generate a thumbnail
-		// TODO: Save image to S3 bucket
+
+		// Save information to DB
+		m.saveInfoToDB(event.TargetObject, filename)
+
+		// Generate a thumbnail
+		err = m.generateThumbnail(destinationPath)
+		if err != nil {
+			log.Print(err)
+		}
+
+		// Save image to S3 bucket
+		m.AWS.Put(destinationPath)
+
+		// Delete temporary image
+		os.Remove(destinationPath)
 	}
+}
+
+func (m *MiriaClient) generateThumbnail(filePath string) error {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	var decodeFunc func(io.Reader) (image.Image, error)
+	var encodeFunc func(io.Writer, image.Image) error
+	if strings.HasSuffix(filePath, "jpg") {
+		decodeFunc = jpeg.Decode
+		encodeFunc = func(w io.Writer, img image.Image) error {
+			return jpeg.Encode(w, img, nil)
+		}
+	} else if strings.HasSuffix(filePath, "png") {
+		decodeFunc = png.Decode
+		encodeFunc = png.Encode
+	} else if strings.HasSuffix(filePath, "gif") {
+		decodeFunc = gif.Decode
+		encodeFunc = func(w io.Writer, img image.Image) error {
+			return gif.Encode(w, img, nil)
+		}
+	}
+
+	// Decode image
+	img, err := decodeFunc(file)
+	if err != nil {
+		return err
+	}
+
+	// Generate 128x128 thumbnail
+	imgThubnail := resize.Thumbnail(128, 128, img, resize.Lanczos3)
+
+	// Save
+	thumbnailPath := path.Join(m.ThumbnailDirPath, path.Base(filePath))
+	out, err := os.Create(thumbnailPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	err = encodeFunc(out, imgThubnail)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (m *MiriaClient) saveInfoToDB(tweet *twitter.Tweet, filename string) {
