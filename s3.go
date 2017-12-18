@@ -44,6 +44,7 @@ func (cred *AWSCredential) Put(filepath string) error {
 		Bucket: aws.String(cred.BucketName),
 		Key:    aws.String(destinationPath),
 		Body:   file,
+		ACL:    aws.String("public-read"),
 	})
 	if err != nil {
 		return err
