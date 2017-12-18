@@ -83,11 +83,11 @@ func (m *MiriaClient) JustPostYourFavoritedTweetToSlack(event *twitter.Event) {
 
 func (m *MiriaClient) JustPostYourFavoritedTweetWithMediaWhenNotSavedYet(event *twitter.Event) {
 	// If you favorited a tweet and not saved the images yet
+	tweetID := event.TargetObject.IDStr
+	tweetUser := event.TargetObject.User.ScreenName
+	tweetURL := TweetURL(tweetID, tweetUser)
+	log.Printf("You favorited %s.", tweetURL)
 	if m.shouldBeSaved(event) {
-		tweetID := event.TargetObject.IDStr
-		tweetUser := event.TargetObject.User.ScreenName
-		tweetURL := TweetURL(tweetID, tweetUser)
-		log.Printf("You favorited %s.", tweetURL)
 		err := m.SlackClient.postMessage(tweetURL)
 		if err != nil {
 			log.Fatal(err)
