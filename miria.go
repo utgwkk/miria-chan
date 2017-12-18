@@ -147,20 +147,25 @@ func (m *MiriaClient) PostYourFavoritedTweetWithMediaAndSaveImages(event *twitte
 		}
 
 		// Save information to DB
+		log.Print("save info")
 		m.saveInfoToDB(event.TargetObject, filename)
 
 		// Generate a thumbnail
+		log.Print("generate thumbnail")
 		err = m.generateThumbnail(destinationPath)
 		if err != nil {
 			log.Print(err)
 		}
 
 		// Save image to S3 bucket
+		log.Print("put to S3")
 		m.AWS.Put(destinationPath)
 
 		// Delete temporary image
+		log.Print("delete temporary file")
 		os.Remove(destinationPath)
 	}
+	log.Print("congrats! everything was successful!")
 }
 
 func (m *MiriaClient) generateThumbnail(filePath string) error {
