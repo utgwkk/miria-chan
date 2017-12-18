@@ -8,9 +8,11 @@ import (
 
 func main() {
 	miria := NewMiriaClient()
+	miria.RegisterThumbnailPath(os.Getenv("THUMBNAIL_DIR"))
 	miria.InitializeSlackClient(os.Getenv("SLACK_WEBHOOK_URL"))
 	miria.SlackClient.SetUsername(os.Getenv("SLACK_USERNAME"))
 	miria.SlackClient.SetIconEmoji(os.Getenv("SLACK_ICON_EMOJI"))
+	miria.SlackClient.postMessage("ちょっと場所を借りるわ")
 	miria.InitializeTwitterClient(
 		os.Getenv("TWITTER_CONSUMER_KEY"),
 		os.Getenv("TWITTER_CONSUMER_SECRET"),
@@ -30,5 +32,7 @@ func main() {
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASS"),
 	)
-	miria.CollectEvents(miria.JustPostYourFavoritedTweetWithMediaWhenNotSavedYet)
+	miria.CollectEvents(miria.PostYourFavoritedTweetWithMediaAndSaveImages)
+	miria.DB.Close()
+	miria.SlackClient.postMessage("さようなら")
 }
