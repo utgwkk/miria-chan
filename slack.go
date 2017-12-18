@@ -23,10 +23,10 @@ func postMessage(text string) error {
 		return err
 	}
 
-	webhookUrl := os.Getenv("SLACK_WEBHOOK_URL")
+	webhookURL := os.Getenv("SLACK_WEBHOOK_URL")
 
 	resp, err := http.PostForm(
-		webhookUrl,
+		webhookURL,
 		url.Values{"payload": {string(payload)}},
 	)
 	if err != nil {
