@@ -7,8 +7,9 @@ import (
 )
 
 func main() {
-	slackClient := NewSlackWebhookClient(os.Getenv("SLACK_WEBHOOK_URL"))
-	err := slackClient.postMessage("Hello from Golang")
+	miria := NewMiriaClient()
+	miria.InitializeSlackClient(os.Getenv("SLACK_WEBHOOK_URL"))
+	err := miria.SlackClient.postMessage("Hello from Golang")
 	if err != nil {
 		panic(err)
 	}
