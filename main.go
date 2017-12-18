@@ -24,5 +24,11 @@ func main() {
 		os.Getenv("AWS_BUCKET"),
 		os.Getenv("AWS_BUCKET_BASEPATH"),
 	)
+	miria.InitializeDBConnection(
+		os.Getenv("DB_HOSTNAME"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASS"),
+	)
 	miria.CollectEvents(miria.JustPostYourFavoritedTweetWithMediaWhenNotSavedYet)
 }
