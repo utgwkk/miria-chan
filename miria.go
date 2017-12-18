@@ -85,7 +85,7 @@ func (m *MiriaClient) CollectEvents(processEvent func(*twitter.Event)) {
 
 	// Wait for SIGINT and SIGTERM (HIT CTRL-C)
 	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	log.Println(<-ch)
 	stream.Stop()
 }
