@@ -26,7 +26,7 @@ type MiriaClient struct {
 	TwitterClient    (*twitter.Client)
 	TwitterUserID    string
 	SlackClient      (*SlackWebhookClient)
-	AWS              (*AWSCredential)
+	FileStorage      FileStorage
 	DB               (*sql.DB)
 	DSN              string
 	ThumbnailDirPath string
@@ -55,7 +55,7 @@ func (m *MiriaClient) InitializeSlackClient(webhookURL string) {
 }
 
 func (m *MiriaClient) InitializeAWSCredential(accessKeyID, secretAccessKey, region, bucketName, basePath string) {
-	m.AWS = NewAWSCredential(accessKeyID, secretAccessKey, region, bucketName, basePath)
+	m.FileStorage = NewAWSCredential(accessKeyID, secretAccessKey, region, bucketName, basePath)
 }
 
 func (m *MiriaClient) InitializeDBConnection(hostname, databaseName, username, password string) {
@@ -167,9 +167,9 @@ func (m *MiriaClient) PostYourFavoritedTweetWithMediaAndSaveImages(event *twitte
 			log.Print(err)
 		}
 
-		// Save image to S3 bucket
+		// Save image to file storage
 		log.Print("put to S3")
-		err = m.AWS.Put(destinationPath)
+		err = m.FileStorage.Put(destinationPath)
 		if err != nil {
 			log.Print(err)
 		}
