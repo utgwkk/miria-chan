@@ -240,7 +240,7 @@ func (m *MiriaClient) saveInfoToDB(tweet *twitter.Tweet, filename string) {
 	tweetID := tweet.IDStr
 	tweetUser := tweet.User.ScreenName
 	tweetURL := TweetURL(tweetID, tweetUser)
-	comment := tweet.FullText
+	comment := tweet.Text
 	_, err = m.Sql().Exec(
 		"insert into image_info (image_id, comment, source) values (?, ?, ?)",
 		lastID, comment, tweetURL,
