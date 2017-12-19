@@ -64,6 +64,9 @@ func (m *MiriaClient) InitializeDBConnection(hostname, databaseName, username, p
 		Passwd: password,
 		DBName: databaseName,
 		Addr:   hostname,
+		Params: map[string]string{
+			"charset": "utf8mb4,utf8",
+		},
 	}
 	dsn := config.FormatDSN()
 	db, err := NewMySQLConnection(dsn)
