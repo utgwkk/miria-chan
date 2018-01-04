@@ -191,25 +191,21 @@ func (m *MiriaClient) generateThumbnail(filePath string) error {
 	}
 	defer file.Close()
 
-	var decodeFunc func(io.Reader) (image.Image, error)
 	var encodeFunc func(io.Writer, image.Image) error
 	if strings.HasSuffix(filePath, "jpg") {
-		decodeFunc = jpeg.Decode
 		encodeFunc = func(w io.Writer, img image.Image) error {
 			return jpeg.Encode(w, img, nil)
 		}
 	} else if strings.HasSuffix(filePath, "png") {
-		decodeFunc = png.Decode
 		encodeFunc = png.Encode
 	} else if strings.HasSuffix(filePath, "gif") {
-		decodeFunc = gif.Decode
 		encodeFunc = func(w io.Writer, img image.Image) error {
 			return gif.Encode(w, img, nil)
 		}
 	}
 
 	// Decode image
-	img, err := decodeFunc(file)
+	img, _, err := image.Decode(file)
 	if err != nil {
 		return err
 	}
