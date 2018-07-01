@@ -2,42 +2,30 @@ package main
 
 import (
 	"database/sql"
-	"image"
-	"image/gif"
-	"image/jpeg"
-	"image/png"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"path"
-	"strings"
 	"syscall"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/nfnt/resize"
 
 	"github.com/dghubble/go-twitter/twitter"
 )
 
 type MiriaClient struct {
-	TwitterClient    (*twitter.Client)
-	TwitterUserID    string
-	SlackClient      (*SlackWebhookClient)
-	FileStorage      FileStorage
-	DB               (*sql.DB)
-	DSN              string
-	ThumbnailDirPath string
+	TwitterClient (*twitter.Client)
+	TwitterUserID string
+	SlackClient   (*SlackWebhookClient)
+	FileStorage   FileStorage
+	DB            (*sql.DB)
+	DSN           string
 }
 
 func NewMiriaClient() *MiriaClient {
 	return &MiriaClient{}
-}
-
-func (m *MiriaClient) RegisterThumbnailPath(dirPath string) {
-	m.ThumbnailDirPath = dirPath
 }
 
 func (m *MiriaClient) InitializeTwitterClient(consumerKey, consumerSecret, accessToken, accessTokenSecret string) {
@@ -163,13 +151,6 @@ func (m *MiriaClient) PostYourFavoritedTweetWithMediaAndSaveImages(event *twitte
 		log.Print("save info")
 		m.saveInfoToDB(event.TargetObject, filename)
 
-		// Generate a thumbnail
-		log.Print("generate thumbnail")
-		err = m.generateThumbnail(destinationPath)
-		if err != nil {
-			log.Print(err)
-		}
-
 		// Save image to file storage
 		log.Print("put to S3")
 		err = m.FileStorage.Put(destinationPath)
@@ -182,49 +163,6 @@ func (m *MiriaClient) PostYourFavoritedTweetWithMediaAndSaveImages(event *twitte
 		os.Remove(destinationPath)
 	}
 	log.Print("congrats! everything was successful!")
-}
-
-func (m *MiriaClient) generateThumbnail(filePath string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	var encodeFunc func(io.Writer, image.Image) error
-	if strings.HasSuffix(filePath, "jpg") {
-		encodeFunc = func(w io.Writer, img image.Image) error {
-			return jpeg.Encode(w, img, nil)
-		}
-	} else if strings.HasSuffix(filePath, "png") {
-		encodeFunc = png.Encode
-	} else if strings.HasSuffix(filePath, "gif") {
-		encodeFunc = func(w io.Writer, img image.Image) error {
-			return gif.Encode(w, img, nil)
-		}
-	}
-
-	// Decode image
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return err
-	}
-
-	// Generate 128x128 thumbnail
-	imgThubnail := resize.Thumbnail(128, 128, img, resize.Lanczos3)
-
-	// Save
-	thumbnailPath := path.Join(m.ThumbnailDirPath, path.Base(filePath))
-	out, err := os.Create(thumbnailPath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	err = encodeFunc(out, imgThubnail)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (m *MiriaClient) saveInfoToDB(tweet *twitter.Tweet, filename string) {

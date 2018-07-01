@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 
@@ -28,6 +29,20 @@ func NewAWSCredential(accessKeyID, secretAccessKey, region, bucketName, basePath
 	}
 }
 
+func getContentType(path string) string {
+	normalizedPath := strings.ToLower(path)
+	if strings.HasSuffix(normalizedPath, "png") {
+		return "image/png"
+	} else if strings.HasSuffix(normalizedPath, "jpg") {
+		return "image/jpeg"
+	} else if strings.HasSuffix(normalizedPath, "jpeg") {
+		return "image/jpeg"
+	} else if strings.HasSuffix(normalizedPath, "gif") {
+		return "image/gif"
+	}
+	return "image/jpeg"
+}
+
 func (cred *AWSCredential) Put(filepath string) error {
 	file, err := os.Open(filepath)
 	if err != nil {
@@ -41,10 +56,11 @@ func (cred *AWSCredential) Put(filepath string) error {
 	}
 	s3session := s3.New(sess)
 	_, err = s3session.PutObject(&s3.PutObjectInput{
-		Bucket: aws.String(cred.BucketName),
-		Key:    aws.String(destinationPath),
-		Body:   file,
-		ACL:    aws.String("public-read"),
+		Bucket:      aws.String(cred.BucketName),
+		Key:         aws.String(destinationPath),
+		Body:        file,
+		ACL:         aws.String("public-read"),
+		ContentType: aws.String(getContentType(filepath)),
 	})
 	if err != nil {
 		return err

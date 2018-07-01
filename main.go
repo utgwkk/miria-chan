@@ -8,7 +8,6 @@ import (
 
 func main() {
 	miria := NewMiriaClient()
-	miria.RegisterThumbnailPath(os.Getenv("THUMBNAIL_DIR"))
 	miria.InitializeSlackClient(os.Getenv("SLACK_WEBHOOK_URL"))
 	miria.SlackClient.SetUsername(os.Getenv("SLACK_USERNAME"))
 	miria.SlackClient.SetIconEmoji(os.Getenv("SLACK_ICON_EMOJI"))
